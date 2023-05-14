@@ -1,4 +1,5 @@
 from random import randint
+from typing import List
 
 PC = 0
 FILE = []
@@ -134,7 +135,7 @@ variables_used = []
 
 # Type A: 3 Register Type
 # def type_a(opcode: str, reg1: str, reg2: str, reg3: str) -> str:
-def type_a(opcode, line_split: list(str)) -> str:
+def type_a(opcode, line_split: List[str]) -> str:
     reg1 = REGISTERS[line_split[1]]["address"]
     reg2 = REGISTERS[line_split[2]]["address"]
     reg3 = REGISTERS[line_split[3]]["address"]
@@ -149,7 +150,7 @@ def int_to_bin_imm(imm_val: str) -> str:
 
 # Type B : Register and Immediate Type
 # def type_b(opcode: str, reg1: str, imm_val: str) -> str:
-def type_b(opcode: str, line_split: list(str)) -> str:
+def type_b(opcode: str, line_split: List[str]) -> str:
     # Get the address of the variable to be loaded into a register
     var_address = VARIABLES[line_split[2][1:]]["address"]
 
@@ -168,7 +169,7 @@ def type_b(opcode: str, line_split: list(str)) -> str:
 
 # Type C : 2 registers type
 # def type_c(opcode: str, reg1: str, reg2: str) -> str:
-def type_c(opcode, line_split: list(str)) -> str:
+def type_c(opcode, line_split: List[str]) -> str:
     reg1 = REGISTERS[line_split[1]]["address"]
     reg2 = REGISTERS[line_split[2]]["address"]
     return f"{opcode}00000{reg1}{reg2}"
@@ -176,7 +177,7 @@ def type_c(opcode, line_split: list(str)) -> str:
 
 # Type D : Register and Memory Address Type
 # def type_d(opcode: str, reg1: str, mem_add: str) -> str:
-def type_d(opcode, line_split: list(str)) -> str:
+def type_d(opcode, line_split: List[str]) -> str:
     reg1 = REGISTERS[line_split[1]]["address"]
     mem_add = line_split[2]
     return f"{opcode}0{reg1}{mem_add}"
@@ -184,14 +185,14 @@ def type_d(opcode, line_split: list(str)) -> str:
 
 # Type E : Memory Address Type
 # def type_e(opcode: str, mem_add: str) -> str:
-def type_e(opcode, line_split: list(str)) -> str:
+def type_e(opcode, line_split: List[str]) -> str:
     mem_add = line_split[1]
     return f"{opcode}0000{mem_add}"
 
 
 # Type F : Halt
 # def type_f(opcode: str) -> str:
-def type_f(opcode, line_split: list(str)) -> str:
+def type_f(opcode, line_split: List[str]) -> str:
     return opcode + ("0" * 11)
 
 
@@ -248,7 +249,7 @@ def write_file(filename: str):
 
 FLAGS = {"V": 0, "L": 0, "G": 0, "E": 0}
 
-def execute_instruction(line_split: list(str)):
+def execute_instruction(line_split: List[str]):
     global FLAGS
     # Label statement encountered
     if PC in LABEL_LINES:
@@ -316,6 +317,7 @@ def execute_instruction(line_split: list(str)):
             print("Error: Undefined label")
             return None
 
+    function_to_call = FUNCTION_TYPES[type_of_instruction]
     # Set flags register
     if instruction in ["add", "sub", "mul", "div"]:
         if instruction in ["add", "sub", "mul"]:
@@ -323,7 +325,6 @@ def execute_instruction(line_split: list(str)):
             if line_split[1] == "FLAGS":
                 print("Error: Illegal use of FLAGS register")
                 return None
-        function_to_call = FUNCTION_TYPES[type_of_instruction]
         result = function_to_call(opcode_of_instruction, line_split)
         if result >= 2**16-1:
             FLAGS["V"] = 1
@@ -346,7 +347,6 @@ def execute_instruction(line_split: list(str)):
             FLAGS["G"] = 0
             FLAGS["E"] = 1
 
-    function_to_call = FUNCTION_TYPES[type_of_instruction]
     result = function_to_call(opcode_of_instruction, line_split)
     OUTPUT.append(result)
     return PC + 1

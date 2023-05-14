@@ -323,8 +323,9 @@ def execute_instruction(line_split: list(str)):
             if line_split[1] == "FLAGS":
                 print("Error: Illegal use of FLAGS register")
                 return None
+        function_to_call = FUNCTION_TYPES[type_of_instruction]
         result = function_to_call(opcode_of_instruction, line_split)
-        if result >= 2**WORD_SIZE:
+        if result >= 2**16-1:
             FLAGS["V"] = 1
         else:
             FLAGS["V"] = 0

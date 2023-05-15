@@ -133,6 +133,14 @@ MEMORY_ADDRESSES = set()
 
 VARIABLES_USED = []
 
+# Type A: 3 Register Type
+# def type_a(opcode: str, reg1: str, reg2: str, reg3: str) -> str:
+def type_a(opcode, line_split: List[str]) -> str:
+    reg1 = REGISTERS[line_split[1]]["address"]
+    reg2 = REGISTERS[line_split[2]]["address"]
+    reg3 = REGISTERS[line_split[3]]["address"]
+    return f"{opcode}00{reg1}{reg2}{reg3}"
+
 #binary to decimal(Check the arguments of the functions, it might be wrong)
 def binary_to_floating(imm_val):
     imm_val = "100.2"
@@ -191,14 +199,6 @@ def binary_to_floating(imm_val):
     floating_point = (c + mantissa)
     return (floating_point)
 
-# Type A: 3 Register Type
-# def type_a(opcode: str, reg1: str, reg2: str, reg3: str) -> str:
-def type_a(opcode, line_split: List[str]) -> str:
-    reg1 = REGISTERS[line_split[1]]["address"]
-    reg2 = REGISTERS[line_split[2]]["address"]
-    reg3 = REGISTERS[line_split[3]]["address"]
-    return f"{opcode}00{reg1}{reg2}{reg3}"
-
 
 def int_to_bin_imm(imm_val: str) -> str:
     #bin_val = bin(int(imm_val))[2:]
@@ -235,6 +235,9 @@ def type_c(opcode, line_split: List[str]) -> str:
 # def type_d(opcode: str, reg1: str, mem_add: str) -> str:
 def type_d(opcode, line_split: List[str]) -> str:
     reg1 = REGISTERS[line_split[1]]["address"]
+    if (line_split[2] not in VARIABLES.keys()):
+        print("Error: Variable not defined")
+        return ""
     mem_add=VARIABLES[line_split[2]]["address"]
     return f"{opcode}0{reg1}{mem_add}"
 
@@ -242,7 +245,10 @@ def type_d(opcode, line_split: List[str]) -> str:
 # Type E : Memory Address Type
 # def type_e(opcode: str, mem_add: str) -> str:
 def type_e(opcode, line_split: List[str]) -> str:
-    mem_add=LABELS[line_split[1]]
+    if (line_split[1] not in LABELS.keys()):
+        print(f"Error: No label named {line_split[1]}")
+        return ""
+    mem_add=bin(int(LABELS[line_split[1]])).replace("0b", "")
     return f"{opcode}0000{mem_add}"
 
 
@@ -287,9 +293,9 @@ def load_file(filename: str):
         line_split = FILE_TEMP[i].strip().split()
 
         if line_split[0][-1] == ":":
-            #LABELS[line_split[0][:-1]] = len(FILE) 
+            LABELS[line_split[0][:-1]] = len(FILE) 
             #print(line_split[0][:-1])
-            LABELS[line_split[0][:-1]] = assign_variable(line_split[0][:-1]) # Check -1 or not
+           # LABELS[line_split[0][:-1]] = assign_variable(line_split[0][:-1]) # Check -1 or not
             LABEL_LINES.add(len(FILE))
 
         FILE.append(line_split)
@@ -322,14 +328,14 @@ def execute_instruction(line_split: List[str]):
     if line_split[0] == "var":
         if (line_split[1] in VARIABLES_USED):
             print("Error: Variable already used")
-            return None
+            return ""
         assign_variable(line_split[1])
         return PC + 1
 
     instruction = line_split[0]
     if instruction not in INSTRUCTIONS.keys():
         print("Error: Invalid operand")
-        return None
+        return ""
     type_of_instruction = INSTRUCTIONS[instruction]["type"]
     opcode_of_instruction = INSTRUCTIONS[instruction]["opcode"]
 
@@ -344,13 +350,13 @@ def execute_instruction(line_split: List[str]):
         if line_split[2][0] == "$": #Immediate value used
             if line_split[2][1:].isdigit == False:
                 print(f"Error:{line_split[2][1:]} is not an integer")
-                return None 
+                return "" 
             if int(line_split[2][1:]) > 127: # check if the immediate value is more than 7 bits
                 print("Error: Illegal Immediate value (more than 7 bits)")
-                return None
+                return ""
             elif ((line_split[2][1:], 2) in MEMORY_ADDRESSES):
                 print("Error: Address already occupied")
-                return None
+                return ""
             opcode_of_instruction = "00010"
             result = type_b(opcode_of_instruction, line_split)
             OUTPUT.append(result)
@@ -359,7 +365,7 @@ def execute_instruction(line_split: List[str]):
             OUTPUT.append(result)
         else:
             print("Error: Invalid register name")
-            return None
+            return ""
         return PC + 1
 
     # Check if register name is valid or not
@@ -373,20 +379,20 @@ def execute_instruction(line_split: List[str]):
     for variable in VARIABLES_USED:
         if variable not in VARIABLES and variable in LABELS:
             print("Error: Label used as variable")
-            return None
+            return ""
         elif variable not in VARIABLES and variable not in LABELS:
             print("Error: Undefined variable")
-            return None
+            return ""
 
     # Check if labels are defined
     labels_used = [a[:-1] for a in line_split if a.endswith(":")]
     for label in labels_used:
         if label not in LABELS and label in VARIABLES:
             print("Error: Variable used as label")
-            return None
+            return ""
         elif label not in LABELS and label not in VARIABLES:
             print("Error: Undefined label")
-            return None
+            return ""
 
     function_to_call = FUNCTION_TYPES[type_of_instruction]
     # Set flags register
@@ -395,17 +401,17 @@ def execute_instruction(line_split: List[str]):
             
             if len(line_split)<4:
                 print(f"Error: {line_split[0]} must contain 3 parameters")
-                return None
+                return ""
             
             #Check if register name is valid or not
             for element in line_split[1:]:
                 if element not in VARIABLES and element not in ["R0", "R1", "R2", "R3", "R4", "R5", "R6"]:
                     print(f"Error: Invalid Register {element}")
-                    return None
+                    return ""
             # check if FLAGS is used as a destination register
             if line_split[1] == "FLAGS":
                 print("Error: Illegal use of FLAGS register")
-                return None
+                return ""
         result = function_to_call(opcode_of_instruction, line_split)
         if int(result, 2) >= 2**16-1:
             FLAGS["V"] = 1
@@ -415,15 +421,16 @@ def execute_instruction(line_split: List[str]):
     elif instruction == "cmp":
         if len(line_split)>3:
             print("Error: Invalid Compare between registers")
-            return None
+            return ""
         if line_split[1] == "FLAGS": # check if FLAGS is used as a destination register
             print("Error: Illegal use of FLAGS register")
-            return None
-        if REGISTERS[line_split[1]] < REGISTERS[line_split[2]]:
+            return ""
+        
+        if REGISTERS[line_split[1]]['value'] < REGISTERS[line_split[2]]['value']:
             FLAGS["L"] = 1
             FLAGS["G"] = 0
             FLAGS["E"] = 0
-        elif REGISTERS[line_split[1]] > REGISTERS[line_split[2]]:
+        elif REGISTERS[line_split[1]]['value'] > REGISTERS[line_split[2]]['value']:
             FLAGS["L"] = 0
             FLAGS["G"] = 1
             FLAGS["E"] = 0

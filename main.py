@@ -167,7 +167,7 @@ def binary_to_floating(imm_val):
         count += 1
 
     decimal_2 = float(int(new_imm_val[1])/(10**count))
-
+    
     after_size = (7 - size)
     new_count = 0
     new_list_2 = []

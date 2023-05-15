@@ -131,7 +131,7 @@ VARIABLES = {}
 
 MEMORY_ADDRESSES = set()
 
-variables_used = []
+VARIABLES_USED = []
 
 # Type A: 3 Register Type
 # def type_a(opcode: str, reg1: str, reg2: str, reg3: str) -> str:
@@ -150,22 +150,13 @@ def int_to_bin_imm(imm_val: str) -> str:
 
 # Type B : Register and Immediate Type
 # def type_b(opcode: str, reg1: str, imm_val: str) -> str:
-def type_b(opcode: str, line_split: List[str]) -> str:
-    # Get the address of the variable to be loaded into a register
-    var_address = VARIABLES[line_split[2][1:]]["address"]
-
-    # Check if the immediate value is more than 7 bits
-    if int(line_split[1]) > 127:
+def type_b(opcode, line_split: List[str]) -> str:
+    reg1 = REGISTERS[line_split[1]]["address"]
+    imm_val = line_split[2][1:]
+    imm_val = int_to_bin_imm(imm_val)
+    if int(line_split[2][1:]) > 127:
         return "Error: Immediate value is more than 7 bits"
-
-    # Convert the immediate value to binary and pad it with zeroes
-    immediate_value = bin(int(line_split[1]))[2:]
-    immediate_value = (7 - len(immediate_value)) * "0" + immediate_value
-
-    # Combine the opcode, immediate value, and variable address to form the machine code instruction
-    return opcode + immediate_value + var_address
-
-
+    return f"{opcode}0{reg1}{imm_val}"
 
 # Type C : 2 registers type
 # def type_c(opcode: str, reg1: str, reg2: str) -> str:
@@ -220,7 +211,7 @@ def gen_random_memory_address():
 def assign_variable(var_name: str):
     VARIABLES[var_name] = {}
     VARIABLES[var_name]["address"] = gen_random_memory_address()
-    variables_used.append(var_name)
+    VARIABLES_USED.append(var_name)
 
 
 def load_file(filename: str):
@@ -249,8 +240,12 @@ def write_file(filename: str):
 
 FLAGS = {"V": 0, "L": 0, "G": 0, "E": 0}
 
+R = ["R0", "R1", "R2", "R3", "R4", "R5", "R6"]
+
 def execute_instruction(line_split: List[str]):
     global FLAGS
+    global VARIABLES_USED
+    global R
     # Label statement encountered
     if PC in LABEL_LINES:
         line_split = line_split[1:]
@@ -261,7 +256,7 @@ def execute_instruction(line_split: List[str]):
 
     # Variable assignment instruction
     if line_split[0] == "var":
-        if (line_split[1] in variables_used):
+        if (line_split[1] in VARIABLES_USED):
             print("Error: Variable already used")
             return None
         assign_variable(line_split[1])
@@ -292,14 +287,15 @@ def execute_instruction(line_split: List[str]):
             OUTPUT.append(result)
         return PC + 1
 
-    # Check if register names are valid
-    if not all(r in REGISTERS for r in line_split[1:]):
-        print("Error: Invalid register name")
-        return None
+    r = [all for all in line_split if "R" in all]
+    for element in r:
+        if element not in R:
+            print("Error: Invalid register name")
+            return None 
 
     # Check if variables are defined
-    variables_used = [a[1:] for a in line_split[1:] if a.startswith("$")]
-    for variable in variables_used:
+    VARIABLES_USED = [a[1:] for a in line_split[1:] if a.startswith("$")]
+    for variable in VARIABLES_USED:
         if variable not in VARIABLES and variable in LABELS:
             print("Error: Label used as variable")
             return None
@@ -326,7 +322,7 @@ def execute_instruction(line_split: List[str]):
                 print("Error: Illegal use of FLAGS register")
                 return None
         result = function_to_call(opcode_of_instruction, line_split)
-        if result >= 2**16-1:
+        if int(result) >= 2**16-1:
             FLAGS["V"] = 1
         else:
             FLAGS["V"] = 0
@@ -355,9 +351,10 @@ def execute_instruction(line_split: List[str]):
 
 def assemble():
     global PC
+    global VARIABLES_USED
     while PC < len(FILE):
         line = FILE[PC]
-        line_split = line.split()
+        line_split = line
 
         # Check for missing hlt instruction
         if PC == len(FILE) - 1 and line_split[0] != "hlt":
@@ -368,9 +365,9 @@ def assemble():
         PC += 1
 
     # Check if hlt instruction was used as the last instruction
-    if PC == len(FILE) and FILE[PC - 1].split()[0] != "hlt":
-        print("Error: hlt not used as the last instruction")
-        return
+    #if PC == len(FILE) and FILE[PC - 1].split()[0] != "hlt":
+    #    print("Error: hlt not used as the last instruction")
+    #    return
 
 
 def init():

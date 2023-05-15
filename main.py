@@ -228,7 +228,7 @@ def binary_to_floating(imm_val):
         c = bin(biased_exponent)[2:]
         c = c[:3]
 
-        floating_point = (c + mantissa)
+        floating_point = (c + "_" + mantissa)
         floating_point = floating_point[1:]
         print (floating_point)
 

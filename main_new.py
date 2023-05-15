@@ -140,7 +140,9 @@ def is_reg_valid(r: str) -> bool:
 
 
 def is_imm_val_valid(imm_val: str) -> bool:
-    return True
+    if len(imm_val) == 7 and imm_val.isnumeric():
+        return True
+    return False
 
 
 def raise_error_invalid_reg(r: str):
@@ -166,7 +168,6 @@ def int_to_bin_imm(imm_val: str) -> str:
 
 
 def binary_to_floating(imm_val):
-    imm_val = "100.2"
     new_imm_val = imm_val.split(".")
 
     int_decimal = int(new_imm_val[0])
@@ -270,16 +271,17 @@ def type_b(opcode, line_split: list[str]) -> str:
             raise_error_invalid_reg(line_split[1])
         error = True
 
-    if not is_imm_val_valid(line_split[2]):
-        raise_error_imm_value
-        error = True
-
     if error:
         return
 
     reg1 = REGISTERS[line_split[1]]["address"]
     imm_val = line_split[2][1:]
     imm_val = int_to_bin_imm(imm_val)
+    if not is_imm_val_valid(imm_val):
+        raise_error_imm_value
+        error = True
+        return
+    
     return f"{opcode}0{reg1}{imm_val}"
 
 
@@ -489,7 +491,7 @@ def execute_instruction(line_split: list[str]):
     if line_split[0] == "var":
         for i in range(0, PC):
             if len(FILE[i]) > 0:
-                if line_split[1] != "var":
+                if line_split[0] != "var":
                     OUTPUT.append(
                         f"Error in line {PC + 1}: Variable assignment must be done in the beginning of the program"
                     )

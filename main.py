@@ -133,20 +133,6 @@ MEMORY_ADDRESSES = set()
 
 VARIABLES_USED = []
 
-# Type A: 3 Register Type
-# def type_a(opcode: str, reg1: str, reg2: str, reg3: str) -> str:
-def type_a(opcode, line_split: List[str]) -> str:
-    reg1 = REGISTERS[line_split[1]]["address"]
-    reg2 = REGISTERS[line_split[2]]["address"]
-    reg3 = REGISTERS[line_split[3]]["address"]
-    return f"{opcode}00{reg1}{reg2}{reg3}"
-
-
-def int_to_bin_imm(imm_val: str) -> str:
-    bin_val = bin(int(imm_val))[2:]
-    bin_val = ("0" * (7 - len(bin_val))) + bin_val
-    return bin_val
-
 #binary to decimal(Check the arguments of the functions, it might be wrong)
 def binary_to_floating(imm_val):
     imm_val = "100.2"
@@ -205,15 +191,36 @@ def binary_to_floating(imm_val):
     floating_point = (c + mantissa)
     return (floating_point)
 
+# Type A: 3 Register Type
+# def type_a(opcode: str, reg1: str, reg2: str, reg3: str) -> str:
+def type_a(opcode, line_split: List[str]) -> str:
+    reg1 = REGISTERS[line_split[1]]["address"]
+    reg2 = REGISTERS[line_split[2]]["address"]
+    reg3 = REGISTERS[line_split[3]]["address"]
+    return f"{opcode}00{reg1}{reg2}{reg3}"
+
+
+def int_to_bin_imm(imm_val: str) -> str:
+    #bin_val = bin(int(imm_val))[2:]
+    #bin_val = ("0" * (7 - len(bin_val))) + bin_val
+    return bin(int(imm_val)).replace("0b", "")
+
 
 # Type B : Register and Immediate Type
 # def type_b(opcode: str, reg1: str, imm_val: str) -> str:
 def type_b(opcode, line_split: List[str]) -> str:
     reg1 = REGISTERS[line_split[1]]["address"]
-    imm_val = line_split[2][1:]
-    imm_val = int_to_bin_imm(imm_val)
     if int(line_split[2][1:]) > 127:
         return "Error: Immediate value is more than 7 bits"
+    imm_val = line_split[2][1:]
+    imm_val = int_to_bin_imm(imm_val)
+    #print(imm_val)
+    size = len(imm_val)
+    while size < 7:
+        imm_val = imm_val[::-1]
+        imm_val = imm_val + "0"
+        imm_val = imm_val[::-1]
+        size = len(imm_val)
     return f"{opcode}0{reg1}{imm_val}"
 
 # Type C : 2 registers type
@@ -228,7 +235,7 @@ def type_c(opcode, line_split: List[str]) -> str:
 # def type_d(opcode: str, reg1: str, mem_add: str) -> str:
 def type_d(opcode, line_split: List[str]) -> str:
     reg1 = REGISTERS[line_split[1]]["address"]
-    mem_add = line_split[2]
+    mem_add=VARIABLES[line_split[2]]["address"]
     return f"{opcode}0{reg1}{mem_add}"
 
 
@@ -242,7 +249,7 @@ def type_e(opcode, line_split: List[str]) -> str:
 # Type F : Halt
 # def type_f(opcode: str) -> str:
 def type_f(opcode, line_split: List[str]) -> str:
-    return opcode + ("0" * 11)
+    return opcode + ("0"*11)
 
 
 # Storing function references
@@ -326,6 +333,8 @@ def execute_instruction(line_split: List[str]):
 
     # If halt instruction encountered
     if instruction == "hlt":
+        result = type_f(opcode_of_instruction, line_split)
+        OUTPUT.append(result)
         return len(FILE) + 1
 
     # Since mov has 2 types of instructions
@@ -363,10 +372,9 @@ def execute_instruction(line_split: List[str]):
         if variable not in VARIABLES and variable in LABELS:
             print("Error: Label used as variable")
             return None
-        elif variable not in VARIABLES and variable not in LABELS and instruction == "var":
+        elif variable not in VARIABLES and variable not in LABELS:
             print("Error: Undefined variable")
             return None
-            
 
     # Check if labels are defined
     labels_used = [a[:-1] for a in line_split if a.endswith(":")]
@@ -401,6 +409,7 @@ def execute_instruction(line_split: List[str]):
             FLAGS["V"] = 1
         else:
             FLAGS["V"] = 0
+        
     elif instruction == "cmp":
         if len(line_split)>3:
             print("Error: Invalid Compare between registers")
@@ -436,16 +445,16 @@ def assemble():
 
         # Check for missing hlt instruction
         if PC == len(FILE) - 1 and line_split[0] != "hlt":
-            print("Error: Missing hlt instruction")
+            print("Error: hlt instruction is not used as last")
             return
 
         execute_instruction(line_split)
         PC += 1
 
     # Check if hlt instruction was used as the last instruction
-    #if PC == len(FILE) and FILE[PC - 1].split()[0] != "hlt":
-    #    print("Error: hlt not used as the last instruction")
-    #    return
+    #if PC == len(FILE) - 1 and line_split[0] != "hlt":
+    #        print("Error: hlt instruct is not used as last")
+    #        return
 
 
 def init():

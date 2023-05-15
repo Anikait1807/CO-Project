@@ -143,9 +143,10 @@ def type_a(opcode, line_split: List[str]) -> str:
 
 
 def int_to_bin_imm(imm_val: str) -> str:
-    bin_val = bin(int(imm_val))[2:]
-    bin_val = ("0" * (7 - len(bin_val))) + bin_val
-    return bin_val
+    if ("." in imm_val){
+        
+    }
+    return bin(imm_val)
 
 
 # Type B : Register and Immediate Type
@@ -240,12 +241,9 @@ def write_file(filename: str):
 
 FLAGS = {"V": 0, "L": 0, "G": 0, "E": 0}
 
-R = ["R0", "R1", "R2", "R3", "R4", "R5", "R6"]
-
 def execute_instruction(line_split: List[str]):
     global FLAGS
     global VARIABLES_USED
-    global R
     # Label statement encountered
     if PC in LABEL_LINES:
         line_split = line_split[1:]
@@ -286,11 +284,11 @@ def execute_instruction(line_split: List[str]):
             result = type_c(opcode_of_instruction, line_split)
             OUTPUT.append(result)
         return PC + 1
-    
-    # Check if register names are valid or not
+
+    # Check if register name is valid or not
     r = [all for all in line_split if "R" in all]
     for element in r:
-        if element not in R:
+        if element not in REGISTERS.keys():
             print("Error: Invalid register name")
             return None 
 

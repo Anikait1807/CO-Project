@@ -168,7 +168,7 @@ def binary_to_floating(imm_val):
 
     decimal_2 = float(int(new_imm_val[1])/(10**count))
 
-    after_size = (8 - size)
+    after_size = (7 - size)
     new_count = 0
     new_list_2 = []
     while((decimal_2*10)%10 != 0 and new_count < after_size):

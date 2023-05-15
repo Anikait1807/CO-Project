@@ -143,7 +143,6 @@ def type_a(opcode, line_split: List[str]) -> str:
 
 #binary to decimal(Check the arguments of the functions, it might be wrong)
 def binary_to_floating(imm_val):
-    imm_val = "100.2"
     new_imm_val = imm_val.split(".")
 
     int_decimal = int(new_imm_val[0])

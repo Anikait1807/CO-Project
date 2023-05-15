@@ -193,7 +193,6 @@ def binary_to_floating(imm_val):
     biased_exponent = (((exponent-1)*2)-1)
     c = bin(biased_exponent)[2:]
     c = c[:3]
-    print(c)
 
     floating_point = (c + mantissa)
     return (floating_point)

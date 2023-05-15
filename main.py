@@ -147,6 +147,64 @@ def int_to_bin_imm(imm_val: str) -> str:
     bin_val = ("0" * (7 - len(bin_val))) + bin_val
     return bin_val
 
+#binary to decimal(Check the arguments of the functions, it might be wrong)
+def binary_to_floating(imm_val):
+    imm_val = "100.2"
+    new_imm_val = imm_val.split(".")
+
+    int_decimal = int(new_imm_val[0])
+
+    # print(int_decimal%2)
+    new_list = []
+    while(int_decimal > 0):
+        binary_decimal = int_decimal % 2
+        new_list.append((binary_decimal))
+        int_decimal = int(int_decimal/2)
+
+    new_list.reverse()
+    size = len(new_list)
+
+    new_decimal = ""
+    for i in new_list:
+        i = str(i)
+        new_decimal += i
+
+    count = 0
+    for i in new_imm_val[1]:
+        count += 1
+
+    decimal_2 = float(int(new_imm_val[1])/(10**count))
+
+    after_size = (8 - size)
+    new_count = 0
+    new_list_2 = []
+    while((decimal_2*10)%10 != 0 and new_count < after_size):
+        decimal_2 *= 2
+        decimal_2_str = str(decimal_2)
+        new_list_2.append(decimal_2_str[0])
+        new_count += 1
+        
+    new_str = ""
+    for i in new_list_2:
+        new_str += str(i)
+    actual_str = (new_decimal + "." + new_str)
+    
+
+    b = actual_str.split(".")
+    # print(b)
+    mantissa = ""
+    for i in range(1, 6):
+        mantissa += b[0][i]
+
+    exponent = (size-1)
+    biased_exponent = (((exponent-1)*2)-1)
+    c = bin(biased_exponent)[2:]
+    c = c[:3]
+    print(c)
+
+    floating_point = (c + mantissa)
+    return (floating_point)
+
 
 # Type B : Register and Immediate Type
 # def type_b(opcode: str, reg1: str, imm_val: str) -> str:

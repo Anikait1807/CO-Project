@@ -242,7 +242,7 @@ def type_d(opcode, line_split: List[str]) -> str:
 # Type E : Memory Address Type
 # def type_e(opcode: str, mem_add: str) -> str:
 def type_e(opcode, line_split: List[str]) -> str:
-    mem_add = line_split[1]
+    mem_add=LABELS[line_split[1]]
     return f"{opcode}0000{mem_add}"
 
 
@@ -287,7 +287,9 @@ def load_file(filename: str):
         line_split = FILE_TEMP[i].strip().split()
 
         if line_split[0][-1] == ":":
-            LABELS[line_split[0][:-1]] = len(FILE)  # Check -1 or not
+            #LABELS[line_split[0][:-1]] = len(FILE) 
+            #print(line_split[0][:-1])
+            LABELS[line_split[0][:-1]] = assign_variable(line_split[0][:-1]) # Check -1 or not
             LABEL_LINES.add(len(FILE))
 
         FILE.append(line_split)

@@ -286,7 +286,8 @@ def execute_instruction(line_split: List[str]):
             result = type_c(opcode_of_instruction, line_split)
             OUTPUT.append(result)
         return PC + 1
-
+    
+    # Check if register names are valid or not
     r = [all for all in line_split if "R" in all]
     for element in r:
         if element not in R:

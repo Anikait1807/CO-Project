@@ -143,6 +143,21 @@ def type_a(opcode, line_split: List[str]) -> str:
 
 #binary to decimal(Check the arguments of the functions, it might be wrong)
 def binary_to_floating(imm_val):
+    imm_val = "40.2"
+if "." not in imm_val:
+    new_list = []
+    a = int(imm_val)
+    while(a > 0):
+        binary_decimal = a % 2
+        new_list.append((binary_decimal))
+        a = int(a/2)
+        new_list.reverse()
+    new_str = ""
+    for _ in new_list:
+        new_str += str(_)
+    return (new_str)
+    
+else:
     new_imm_val = imm_val.split(".")
 
     int_decimal = int(new_imm_val[0])
@@ -167,7 +182,7 @@ def binary_to_floating(imm_val):
         count += 1
 
     decimal_2 = float(int(new_imm_val[1])/(10**count))
-    
+
     after_size = (7 - size)
     new_count = 0
     new_list_2 = []
@@ -177,24 +192,39 @@ def binary_to_floating(imm_val):
         new_list_2.append(decimal_2_str[0])
         new_count += 1
         
+    # print(new_count)
+    if (len(new_list_2) < after_size):
+        for _ in range(0, (after_size-len(new_list_2))):
+            new_list_2.append("0")
+    # print(new_list_2)
     new_str = ""
     for i in new_list_2:
         new_str += str(i)
     actual_str = (new_decimal + "." + new_str)
-    
+    # print(actual_str)
 
     b = actual_str.split(".")
-    # print(b)
+    # print(b[0][0])
     mantissa = ""
-    for i in range(1, 6):
-        mantissa += b[0][i]
+    if len(b[0]) < 5:
+        for _ in  range(0, (5 - len(b[0]))):
+            mantissa += "0"
+        i = 0
+        for _ in range((5 - len(b[0])), 5):
+            mantissa += b[0][i]
+            i += 1
 
+    else:
+        for i in range(0, 5):
+            mantissa += b[0][i]
+    # print(mantissa)
     exponent = (size-1)
     biased_exponent = (((exponent-1)*2)-1)
     c = bin(biased_exponent)[2:]
     c = c[:3]
 
     floating_point = (c + mantissa)
+    floating_point = floating_point[1:]
     return (floating_point)
 
 

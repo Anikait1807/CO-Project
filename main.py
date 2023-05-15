@@ -143,10 +143,9 @@ def type_a(opcode, line_split: List[str]) -> str:
 
 
 def int_to_bin_imm(imm_val: str) -> str:
-    if ("." in imm_val){
-        
-    }
-    return bin(imm_val)
+    bin_val = bin(int(imm_val))[2:]
+    bin_val = ("0" * (7 - len(bin_val))) + bin_val
+    return bin_val
 
 
 # Type B : Register and Immediate Type
@@ -261,6 +260,9 @@ def execute_instruction(line_split: List[str]):
         return PC + 1
 
     instruction = line_split[0]
+    if instruction not in INSTRUCTIONS.keys():
+        print("Error: Invalid operand")
+        return None
     type_of_instruction = INSTRUCTIONS[instruction]["type"]
     opcode_of_instruction = INSTRUCTIONS[instruction]["opcode"]
 
@@ -271,7 +273,10 @@ def execute_instruction(line_split: List[str]):
     # Since mov has 2 types of instructions
     if instruction == "mov":
         if line_split[2][0] == "$": #Immediate value used
-            if int(line_split[2][1:], 2) > 127: # check if the immediate value is more than 7 bits
+            if line_split[2][1:].isdigit == False:
+                print(f"Error:{line_split[2][1:]} is not an integer")
+                return None 
+            if int(line_split[2][1:]) > 127: # check if the immediate value is more than 7 bits
                 print("Error: Illegal Immediate value (more than 7 bits)")
                 return None
             elif ((line_split[2][1:], 2) in MEMORY_ADDRESSES):
@@ -280,17 +285,19 @@ def execute_instruction(line_split: List[str]):
             opcode_of_instruction = "00010"
             result = type_b(opcode_of_instruction, line_split)
             OUTPUT.append(result)
-        else: #Register used
+        elif line_split[1] in ["R0", "R1", "R2", "R3", "R4", "R5", "R6"] and line_split[2] in ["R0", "R1", "R2", "R3", "R4", "R5", "R6"]: #Register used
             result = type_c(opcode_of_instruction, line_split)
             OUTPUT.append(result)
+        else:
+            print("Error: Invalid register name")
+            return None
         return PC + 1
 
     # Check if register name is valid or not
-    r = [all for all in line_split if "R" in all]
-    for element in r:
-        if element not in REGISTERS.keys():
-            print("Error: Invalid register name")
-            return None 
+    #for element in line_split[1:]:
+    #    if element not in VARIABLES and element not in ["R0", "R1", "R2", "R3", "R4", "R5", "R6"]:
+    #        print(f"Error: Invalid Register {element}")
+    #        return None
 
     # Check if variables are defined
     VARIABLES_USED = [a[1:] for a in line_split[1:] if a.startswith("$")]
@@ -298,9 +305,10 @@ def execute_instruction(line_split: List[str]):
         if variable not in VARIABLES and variable in LABELS:
             print("Error: Label used as variable")
             return None
-        elif variable not in VARIABLES and variable not in LABELS:
+        elif variable not in VARIABLES and variable not in LABELS and instruction == "var":
             print("Error: Undefined variable")
             return None
+            
 
     # Check if labels are defined
     labels_used = [a[:-1] for a in line_split if a.endswith(":")]
@@ -316,16 +324,29 @@ def execute_instruction(line_split: List[str]):
     # Set flags register
     if instruction in ["add", "sub", "mul", "div"]:
         if instruction in ["add", "sub", "mul"]:
+            
+            if len(line_split)<4:
+                print(f"Error: {line_split[0]} must contain 3 parameters")
+                return None
+            
+            #Check if register name is valid or not
+            for element in line_split[1:]:
+                if element not in VARIABLES and element not in ["R0", "R1", "R2", "R3", "R4", "R5", "R6"]:
+                    print(f"Error: Invalid Register {element}")
+                    return None
             # check if FLAGS is used as a destination register
             if line_split[1] == "FLAGS":
                 print("Error: Illegal use of FLAGS register")
                 return None
         result = function_to_call(opcode_of_instruction, line_split)
-        if int(result) >= 2**16-1:
+        if int(result, 2) >= 2**16-1:
             FLAGS["V"] = 1
         else:
             FLAGS["V"] = 0
     elif instruction == "cmp":
+        if len(line_split)>3:
+            print("Error: Invalid Compare between registers")
+            return None
         if line_split[1] == "FLAGS": # check if FLAGS is used as a destination register
             print("Error: Illegal use of FLAGS register")
             return None

@@ -259,11 +259,6 @@ def floating_to_binary(imm_val):
         return floating_point
 
 
-# def int_to_bin_imm(imm_val: str) -> str:
-#     #bin_val = bin(int(imm_val))[2:]
-#     #bin_val = ("0" * (7 - len(bin_val))) + bin_val
-#     return bin(int(imm_val)).replace("0b", "")
-
 # Type A: 3 Register Type
 # def type_a(opcode: str, reg1: str, reg2: str, reg3: str) -> str:
 def type_a(opcode, line_split: list[str]) -> str:
@@ -309,15 +304,19 @@ def type_b(opcode, line_split: list[str]) -> str:
     if error:
         return
 
-    reg1 = REGISTERS[line_split[1]]["address"]
+    reg1_address = REGISTERS[line_split[1]]["address"]
+    print("Register Address", reg1_address)
     imm_val = line_split[2][1:]
+    print("Immediate value", imm_val)
     imm_val = int_to_bin_imm(imm_val)
+    print("Converted value", imm_val)
     if not is_imm_val_valid(imm_val):
         raise_error_imm_value
         error = True
         return
 
-    return f"{opcode}0{reg1}{imm_val}"
+    print(f"Returning {opcode}0{reg1_address}{imm_val}")
+    return f"{opcode}0{reg1_address}{imm_val}"
 
 
 # Type C : 2 registers type
@@ -332,13 +331,25 @@ def type_c(opcode, line_split: list[str]) -> str:
     if not is_reg_valid(line_split[1]):
         if line_split[1] == "FLAGS":
             raise_error_flag_reg_used()
+            return
         else:
             raise_error_invalid_reg(line_split[1])
         error = True
 
     if not is_reg_valid(line_split[2]):
+        #Ambiguity as in some test cases of mov instruction
+        #Second register is allowed to be FLAGS and in some it is not allowed
+        #So implementing both cases
+
+        #If second can't be FLAGS:
+        # if line_split[2] == "FLAGS":
+        #     raise_error_flag_reg_used()
+        #     return
+        
+        #If second can be FLAGS: then comment out previous block and uncomment the following block
         if line_split[2] == "FLAGS":
             pass
+
         else:
             raise_error_invalid_reg(line_split[2])
             error = True
@@ -376,7 +387,7 @@ def type_d(opcode, line_split: list[str]) -> str:
             return
 
         add = VARIABLES[mem_add]["address"]
-        return f"{opcode}0000{add}"
+        return f"{opcode}0{reg1}{add}"
 
     return f"{opcode}0{reg1}{mem_add}"
 
@@ -525,7 +536,7 @@ def execute_instruction(line_split: list[str]):
     if line_split[0] == "var":
         for i in range(0, PC):
             if len(FILE[i]) > 0:
-                if line_split[0] != "var":
+                if FILE[i][0] != "var":
                     OUTPUT.append(
                         f"Error in line {PC + 1}: Variable assignment must be done in the beginning of the program"
                     )
@@ -553,6 +564,7 @@ def execute_instruction(line_split: list[str]):
             result = type_b(opcode_of_instruction, line_split)
             OUTPUT.append(result)
         else:  # Register used
+            opcode_of_instruction = "00011"
             result = type_c(opcode_of_instruction, line_split)
             OUTPUT.append(result)
         return PC + 1
@@ -609,6 +621,7 @@ def print_output():
 
 def main():
     init()
+    input
     load_file("sample.txt")
     assemble()
     print_output()

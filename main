@@ -171,7 +171,6 @@ def floating_to_binary(imm_val):
     new_imm_val = imm_val.split(".")
     int_decimal = int(new_imm_val[0])
 
-    # print(int_decimal%2)
     new_list = []
     while int_decimal > 0:
         binary_decimal = int_decimal % 2
@@ -180,7 +179,6 @@ def floating_to_binary(imm_val):
 
     new_list.reverse()
     size = len(new_list)
-    # print(size)
 
     new_decimal = ""
     for i in new_list:
@@ -202,12 +200,11 @@ def floating_to_binary(imm_val):
         new_list_2.append(decimal_2_str)
         decimal_2 -= int(decimal_2)
         new_count += 1
-    # print(new_list_2)
-    # print(new_count)
+
     if len(new_list_2) < after_size:
         for _ in range(0, (after_size - len(new_list_2))):
             new_list_2.append("0")
-    # print(new_list_2)
+
     if len(new_list_2) > after_size:
         for i in range((len(new_list_2)), (len(new_list_2) - after_size), -1):
             new_list_2.pop()
@@ -215,10 +212,8 @@ def floating_to_binary(imm_val):
     for i in new_list_2:
         new_str += str(i)
     actual_str = new_decimal + "." + new_str
-    # print(actual_str)
 
     b = actual_str.split(".")
-    # print(b[0])
     mantissa = ""
 
     if b[0] == 1:
@@ -236,7 +231,6 @@ def floating_to_binary(imm_val):
         for i in new_list_3:
             mantissa += i
 
-    # print(mantissa)
     exponent = size - 1
     biased_exponent = 3 + exponent
     c = bin(biased_exponent)[2:]
@@ -248,7 +242,7 @@ def floating_to_binary(imm_val):
         f = ""
         for i in list_zero:
             f += i
-        # print(f)
+
         floating_point_new = f + floating_point
         return floating_point_new
     elif len(c) > 3:
@@ -305,17 +299,13 @@ def type_b(opcode, line_split: list[str]) -> str:
         return
 
     reg1_address = REGISTERS[line_split[1]]["address"]
-    print("Register Address", reg1_address)
     imm_val = line_split[2][1:]
-    print("Immediate value", imm_val)
     imm_val = int_to_bin_imm(imm_val)
-    print("Converted value", imm_val)
     if not is_imm_val_valid(imm_val):
         raise_error_imm_value
         error = True
         return
 
-    print(f"Returning {opcode}0{reg1_address}{imm_val}")
     return f"{opcode}0{reg1_address}{imm_val}"
 
 

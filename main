@@ -167,20 +167,20 @@ def int_to_bin_imm(imm_val: str) -> str:
     return bin_val
 
 
-def binary_to_floating(imm_val):
+def floating_to_binary(imm_val):
     new_imm_val = imm_val.split(".")
-
     int_decimal = int(new_imm_val[0])
 
     # print(int_decimal%2)
     new_list = []
-    while(int_decimal > 0):
+    while int_decimal > 0:
         binary_decimal = int_decimal % 2
         new_list.append((binary_decimal))
-        int_decimal = int(int_decimal/2)
+        int_decimal = int(int_decimal / 2)
 
     new_list.reverse()
     size = len(new_list)
+    # print(size)
 
     new_decimal = ""
     for i in new_list:
@@ -191,37 +191,72 @@ def binary_to_floating(imm_val):
     for i in new_imm_val[1]:
         count += 1
 
-    decimal_2 = float(int(new_imm_val[1])/(10**count))
+    decimal_2 = float(int(new_imm_val[1]) / (10**count))
 
-    after_size = (8 - size)
+    after_size = 8 - size
     new_count = 0
     new_list_2 = []
-    while((decimal_2*10)%10 != 0 and new_count < after_size):
+    while (decimal_2 * 10) % 10 != 0 and new_count < after_size:
         decimal_2 *= 2
-        decimal_2_str = str(decimal_2)
-        new_list_2.append(decimal_2_str[0])
+        decimal_2_str = bin(int(str(decimal_2)[0]))[2:3]
+        new_list_2.append(decimal_2_str)
+        decimal_2 -= int(decimal_2)
         new_count += 1
-        
+    # print(new_list_2)
+    # print(new_count)
+    if len(new_list_2) < after_size:
+        for _ in range(0, (after_size - len(new_list_2))):
+            new_list_2.append("0")
+    # print(new_list_2)
+    if len(new_list_2) > after_size:
+        for i in range((len(new_list_2)), (len(new_list_2) - after_size), -1):
+            new_list_2.pop()
     new_str = ""
     for i in new_list_2:
         new_str += str(i)
-    actual_str = (new_decimal + "." + new_str)
-    
+    actual_str = new_decimal + "." + new_str
+    # print(actual_str)
 
     b = actual_str.split(".")
-    # print(b)
+    # print(b[0])
     mantissa = ""
-    for i in range(1, 6):
-        mantissa += b[0][i]
 
-    exponent = (size-1)
-    biased_exponent = (((exponent-1)*2)-1)
+    if b[0] == 1:
+        for i in range(0, 6):
+            mantissa += actual_str[i]
+
+    else:
+        new_list_3 = []
+        for i in range(1, 7):
+            new_list_3.append(actual_str[i])
+        if "." not in new_list_3:
+            new_list_3.pop()
+        if "." in new_list_3:
+            new_list_3.remove(".")
+        for i in new_list_3:
+            mantissa += i
+
+    # print(mantissa)
+    exponent = size - 1
+    biased_exponent = 3 + exponent
     c = bin(biased_exponent)[2:]
-    c = c[:3]
-    print(c)
-
-    floating_point = (c + mantissa)
-    return (floating_point)
+    floating_point = c + "_" + mantissa
+    if len(c) < 3:
+        list_zero = []
+        for i in range(0, (3 - len(c))):
+            list_zero.append("0")
+        f = ""
+        for i in list_zero:
+            f += i
+        # print(f)
+        floating_point_new = f + floating_point
+        return floating_point_new
+    elif len(c) > 3:
+        c = c[0:3]
+        floating_point_new = c + "_" + mantissa
+        return floating_point_new
+    else:
+        return floating_point
 
 
 # def int_to_bin_imm(imm_val: str) -> str:
@@ -281,7 +316,7 @@ def type_b(opcode, line_split: list[str]) -> str:
         raise_error_imm_value
         error = True
         return
-    
+
     return f"{opcode}0{reg1}{imm_val}"
 
 
@@ -339,7 +374,7 @@ def type_d(opcode, line_split: list[str]) -> str:
         if mem_add not in VARIABLES:
             OUTPUT.append(f"Error in Line {PC + 1}: No variable named {mem_add}")
             return
-        
+
         add = VARIABLES[mem_add]["address"]
         return f"{opcode}0000{add}"
 
@@ -359,12 +394,11 @@ def type_e(opcode, line_split: list[str]) -> str:
         if mem_add not in LABELS:
             OUTPUT.append(f"Error in Line {PC + 1}: No label named {mem_add}")
             return
-        
+
         add = LABELS[mem_add]["address"]
         return f"{opcode}0000{add}"
-    
+
     return f"{opcode}0000{mem_add}"
-    
 
 
 # Type F : Halt
@@ -538,10 +572,12 @@ def assign_all_label_adresses():
         LABELS[l] = {"address": None, "freq": 0}
         assign_label(l)
 
+
 def assign_all_var_adresses():
     for v in VARIABLES:
         VARIABLES[v] = {"address": None, "freq": 0}
         assign_variable(v)
+
 
 def assemble():
     check_hlt()

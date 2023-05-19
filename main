@@ -502,8 +502,12 @@ def check_hlt():
             )
             return
 
-
-def load_memory_adresses():
+#Just loading memory addresses
+#So we have a set of memory addresses
+#While we assign memory addresses to variables and labels,
+#We can check whether the memory addresses directly have been used or not in the program
+#So that no memory address is used twice wrongly
+def load_memory_addresses():
     for line_split in FILE:
         if line_split[0] in {"ld", "st"}:
             if len(line_split) == 3:
@@ -573,14 +577,14 @@ def execute_instruction(line_split: list[str]):
     return PC + 1
 
 
-def assign_all_label_adresses():
+def assign_all_label_addresses():
     for l in LABELS:
         LABELS[l]["address"] = None
         LABELS[l]["freq"] = 0
         assign_label(l)
 
 
-def assign_all_var_adresses():
+def assign_all_var_addresses():
     for v in VARIABLES:
         VARIABLES[v]["address"] = None
         VARIABLES[v]["freq"] = 0
@@ -589,9 +593,9 @@ def assign_all_var_adresses():
 
 def assemble():
     check_hlt()
-    load_memory_adresses()
-    assign_all_label_adresses()
-    assign_all_var_adresses()
+    load_memory_addresses()
+    assign_all_label_addresses()
+    assign_all_var_addresses()
     global PC
     while PC < len(FILE):
         line_split = FILE[PC]

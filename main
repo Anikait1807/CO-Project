@@ -144,8 +144,12 @@ def is_reg_valid(r: str) -> bool:
 
 
 def is_imm_val_valid(imm_val: str) -> bool:
-    if len(imm_val) == 7 and imm_val.isnumeric():
-        return True
+    # currently imm_val is an int typecasted as a string
+    # so it it's max value in binary can be 1111111 (7 1s)
+    # so range should be 0 to 127
+    if imm_val.isnumeric():
+        if int(imm_val) >= 0 and int(imm_val) <= 127:
+            return True
     return False
 
 
@@ -304,11 +308,11 @@ def type_b(opcode, line_split: list[str]) -> str:
 
     reg1_address = REGISTERS[line_split[1]]["address"]
     imm_val = line_split[2][1:]
-    imm_val = int_to_bin_imm(imm_val)
     if not is_imm_val_valid(imm_val):
         raise_error_imm_value
         error = True
         return
+    imm_val = int_to_bin_imm(imm_val)
 
     return f"{opcode}0{reg1_address}{imm_val}"
 

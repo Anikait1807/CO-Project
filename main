@@ -1,9 +1,11 @@
-import sys
 from random import randint
+from pprint import pprint
+import sys
 
 PC = 0
 FILE = []
 OUTPUT = []
+VARS_TILL = 0
 
 INSTRUCTIONS = {
     "add": {
@@ -128,6 +130,7 @@ LABELS = {}
 LABEL_LINES = set()
 
 VARIABLES = {}
+VARIABLE_COUNTER = 0
 
 MEMORY_ADDRESSES = set()
 
@@ -432,34 +435,43 @@ def gen_random_memory_address():
 
 
 def assign_variable(var_name: str):
-    address = gen_random_memory_address()
-    while address in MEMORY_ADDRESSES:
-        address = gen_random_memory_address()
+    global VARIABLE_COUNTER
+    #Formula for var address
+    #lines - number of variables + index of variable(indexed at 0)
+    address_int = len(FILE) - len(VARIABLES) + VARIABLE_COUNTER
+    address = bin(address_int)[2:]
+    VARIABLE_COUNTER += 1
+    address = ((7 - len(address)) * "0") + address
     VARIABLES[var_name]["address"] = address
     MEMORY_ADDRESSES.add(address)
 
 
 def assign_label(label_name: str):
-    address = gen_random_memory_address()
-    while address in MEMORY_ADDRESSES:
-        address = gen_random_memory_address()
+    line_no = LABELS[label_name]["line"]
+    address = bin(line_no)[2:]
+    address = ((7 - len(address)) * "0") + address
     LABELS[label_name]["address"] = address
     MEMORY_ADDRESSES.add(address)
 
 
-def load_file(filename: str):
-    with open(filename, "r") as f:
-        FILE_TEMP = f.readlines()
+def load_file():
+    FILE_TEMP = []
+    for line in sys.stdin:
+        FILE_TEMP.append(line)
 
     for i in range(len(FILE_TEMP)):
+        global VARS_TILL
         line_split = FILE_TEMP[i].strip().split()
 
         if line_split[0][-1] == ":":
-            LABELS[line_split[0][:-1]] = {}  # Check -1 or not
+            label_name = line_split[0][:-1]
+            LABELS[label_name] = {}  # Check -1 or not
+            LABELS[label_name]["line"] = len(FILE) - VARS_TILL
             LABEL_LINES.add(len(FILE))
 
         if line_split[0] == "var":
             VARIABLES[line_split[1]] = {}
+            VARS_TILL += 1
 
         FILE.append(line_split)
 
@@ -572,13 +584,15 @@ def execute_instruction(line_split: list[str]):
 
 def assign_all_label_adresses():
     for l in LABELS:
-        LABELS[l] = {"address": None, "freq": 0}
+        LABELS[l]["address"] = None
+        LABELS[l]["freq"] = 0
         assign_label(l)
 
 
 def assign_all_var_adresses():
     for v in VARIABLES:
-        VARIABLES[v] = {"address": None, "freq": 0}
+        VARIABLES[v]["address"] = None
+        VARIABLES[v]["freq"] = 0
         assign_variable(v)
 
 
@@ -595,7 +609,8 @@ def assemble():
 
 
 def init():
-    global PC, FILE, OUTPUT, LABELS, VARIABLES, LABEL_LINES
+    global PC, FILE, OUTPUT, LABELS, VARIABLES, LABEL_LINES, VARS_TILL
+    VARS_TILL = 0
     PC = 0
     FILE, OUTPUT = [], []
     LABELS, VARIABLES = {}, {}
@@ -604,29 +619,8 @@ def init():
     for r in REGISTERS:
         REGISTERS[r]["value"] = ""
 
-def load_std():
-    FILE_TEMP = []
-    for line in sys.stdin:
-        FILE_TEMP.append(line)
-
-    for i in range(len(FILE_TEMP)):
-        line_split = FILE_TEMP[i].strip().split()
-
-        if line_split[0][-1] == ":":
-            LABELS[line_split[0][:-1]] = {}  # Check -1 or not
-            LABEL_LINES.add(len(FILE))
-
-        if line_split[0] == "var":
-            VARIABLES[line_split[1]] = {}
-
-        FILE.append(line_split)
-
 
 def print_output():
-    for o in OUTPUT:
-        print(o)
-
-def std_out():
     for o in OUTPUT:
         if o is not None:
             sys.stdout.write(o)
@@ -635,12 +629,9 @@ def std_out():
 
 def main():
     init()
-    load_std()
+    load_file()
     assemble()
-    # print_output()
-    std_out()
-    # write_file("output.txt")
-
+    print_output()
 
 if __name__ == "__main__":
     main()

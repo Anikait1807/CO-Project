@@ -1,3 +1,4 @@
+import sys
 from random import randint
 
 PC = 0
@@ -603,19 +604,42 @@ def init():
     for r in REGISTERS:
         REGISTERS[r]["value"] = ""
 
+def load_std():
+    FILE_TEMP = []
+    for line in sys.stdin:
+        FILE_TEMP.append(line)
+
+    for i in range(len(FILE_TEMP)):
+        line_split = FILE_TEMP[i].strip().split()
+
+        if line_split[0][-1] == ":":
+            LABELS[line_split[0][:-1]] = {}  # Check -1 or not
+            LABEL_LINES.add(len(FILE))
+
+        if line_split[0] == "var":
+            VARIABLES[line_split[1]] = {}
+
+        FILE.append(line_split)
+
 
 def print_output():
     for o in OUTPUT:
         print(o)
 
+def std_out():
+    for o in OUTPUT:
+        if o is not None:
+            sys.stdout.write(o)
+            sys.stdout.write("\n")
+
 
 def main():
     init()
-    input
-    load_file("sample.txt")
+    load_std()
     assemble()
-    print_output()
-    write_file("output.txt")
+    # print_output()
+    std_out()
+    # write_file("output.txt")
 
 
 if __name__ == "__main__":

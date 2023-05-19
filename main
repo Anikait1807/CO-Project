@@ -331,16 +331,16 @@ def type_c(opcode, line_split: list[str]) -> str:
         error = True
 
     if not is_reg_valid(line_split[2]):
-        #Ambiguity as in some test cases of mov instruction
-        #Second register is allowed to be FLAGS and in some it is not allowed
-        #So implementing both cases
+        # Ambiguity as in some test cases of mov instruction
+        # Second register is allowed to be FLAGS and in some it is not allowed
+        # So implementing both cases
 
-        #If second can't be FLAGS:
+        # If second can't be FLAGS:
         # if line_split[2] == "FLAGS":
         #     raise_error_flag_reg_used()
         #     return
-        
-        #If second can be FLAGS: then comment out previous block and uncomment the following block
+
+        # If second can be FLAGS: then comment out previous block and uncomment the following block
         if line_split[2] == "FLAGS":
             pass
 
@@ -436,8 +436,8 @@ def gen_random_memory_address():
 
 def assign_variable(var_name: str):
     global VARIABLE_COUNTER
-    #Formula for var address
-    #lines - number of variables + index of variable(indexed at 0)
+    # Formula for var address
+    # lines - number of variables + index of variable(indexed at 0)
     address_int = len(FILE) - len(VARIABLES) + VARIABLE_COUNTER
     address = bin(address_int)[2:]
     VARIABLE_COUNTER += 1
@@ -454,10 +454,10 @@ def assign_label(label_name: str):
     MEMORY_ADDRESSES.add(address)
 
 
-def load_file():
+def std_input():
     FILE_TEMP = []
-    for line in sys.stdin:
-        FILE_TEMP.append(line)
+    for i in sys.stdin:
+        FILE_TEMP.append(i)
 
     for i in range(len(FILE_TEMP)):
         global VARS_TILL
@@ -465,7 +465,7 @@ def load_file():
 
         if line_split[0][-1] == ":":
             label_name = line_split[0][:-1]
-            LABELS[label_name] = {}  # Check -1 or not
+            LABELS[label_name] = {}
             LABELS[label_name]["line"] = len(FILE) - VARS_TILL
             LABEL_LINES.add(len(FILE))
 
@@ -509,19 +509,6 @@ def load_memory_adresses():
             if len(line_split) == 2:
                 if line_split[1].isnumeric():
                     MEMORY_ADDRESSES.add(line_split[1])
-
-
-def read_file():
-    for i in range(len(FILE)):
-        pass
-
-
-def write_file(filename: str):
-    with open(filename, "w") as f:
-        for o in OUTPUT:
-            if o is not None:
-                f.write(o)
-                f.write("\n")
 
 
 def execute_instruction(line_split: list[str]):
@@ -620,7 +607,7 @@ def init():
         REGISTERS[r]["value"] = ""
 
 
-def print_output():
+def std_output():
     for o in OUTPUT:
         if o is not None:
             sys.stdout.write(o)
@@ -629,9 +616,10 @@ def print_output():
 
 def main():
     init()
-    load_file()
+    std_input()
     assemble()
-    print_output()
+    std_output()
+
 
 if __name__ == "__main__":
     main()

@@ -309,7 +309,7 @@ def type_b(opcode, line_split: list[str]) -> str:
     reg1_address = REGISTERS[line_split[1]]["address"]
     imm_val = line_split[2][1:]
     if not is_imm_val_valid(imm_val):
-        raise_error_imm_value
+        raise_error_imm_value(imm_val)
         error = True
         return
     imm_val = int_to_bin_imm(imm_val)
@@ -495,6 +495,12 @@ def check_hlt():
         OUTPUT.append(f"Error: Halt statement is required in the program")
         return
 
+    if "hlt" in FILE[0] and len(FILE) > 1:
+        OUTPUT.append(
+            f"Error in Line {i + 1}: Halt statement should be the last statement"
+        )
+        return
+    
     for i in range(max(HALT_AT) + 1, len(FILE)):
         if len(FILE[i]) != 0:
             OUTPUT.append(

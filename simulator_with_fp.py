@@ -17,15 +17,19 @@ class BINARY:
             self.limit_bits()
             self.normalized = True
 
-    def get_int_val(self):
-        if self.check_valid_binary():
-            return int(self.val, 2)
 
     def check_valid_binary(self):
-        allowed_set = {0, 1}
+        allowed_set = {"0", "1"}
         for cur_char in self.val:
             if cur_char not in allowed_set:
                 return False
+            
+    def get_int_val(self):
+        if self.check_valid_binary():
+            return int(self.val, 2)
+        else:
+            return 0
+
 
     def limit_bits(self, bits_arg=None):
         if bits_arg is not None:
@@ -631,16 +635,17 @@ def mov_c(reg1_add: str, reg2_add: str):
 def div_c(reg1_add: str, reg2_add: str):
     if REGISTERS_DICT[reg2_add].val.get_int_val() == 0:
         REGISTERS_DICT["111"].overflow = True
-        REGISTERS_DICT["00000"].val = BINARY("0", 16)
-        REGISTERS_DICT["00001"].val = BINARY("0", 16)
+        REGISTERS_DICT["000"].val = BINARY("0", 16)
+        REGISTERS_DICT["001"].val = BINARY("0", 16)
         return
 
     result = BINARY.div_two_binary(
         REGISTERS_DICT[reg1_add].val, REGISTERS_DICT[reg2_add].val
     )
-    REGISTERS_DICT["00000"].val = result["quotient"]
-    REGISTERS_DICT["00000"].val.limit_bits(16)
-    REGISTERS_DICT["00001"].val = result["remainder"]
+    REGISTERS_DICT["000"].val = result["quotient"]
+    REGISTERS_DICT["000"].val.limit_bits(16)
+    REGISTERS_DICT["001"].val = result["remainder"]
+    REGISTERS_DICT["001"].val.limit_bits(16)
 
 
 def not_c(reg1_add: str, reg2_add: str):
@@ -888,8 +893,8 @@ def sys_based():
 
 
 def main():
-    file_based()
-    # sys_based()
+    # file_based()
+    sys_based()
 
 
 if __name__ == "__main__":

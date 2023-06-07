@@ -17,15 +17,18 @@ class BINARY:
             self.limit_bits()
             self.normalized = True
 
-    def get_int_val(self):
-        if self.check_valid_binary():
-            return int(self.val, 2)
+
 
     def check_valid_binary(self):
         allowed_set = {0, 1}
         for cur_char in self.val:
             if cur_char not in allowed_set:
                 return False
+
+    def get_int_val(self):
+        if self.check_valid_binary():
+            return int(self.val, 2)
+        return 0
 
     def limit_bits(self, bits_arg=None):
         if bits_arg is not None:
@@ -149,6 +152,157 @@ class BINARY:
             answer = invert[bin1.val[i]] + answer
 
         return BINARY(answer)
+
+
+def get_val(bin_obj):
+    if len(bin_obj.val) == "8":
+        if hasattr(bin_obj, "max_val"):
+            return FLOAT_BINARY.convert_btf(bin_obj.val)
+    else:
+        return int(bin_obj.val, 2)
+
+
+class FLOAT_BINARY:
+    def __init__(self, val: str):
+        self.val = val
+        self.bits = 8
+        self.max_val = 496
+
+    def convert_btf(val: str) -> float:
+        val_new = val
+        if len(val) < 8:
+            val_new = ("0" * (8 - len(val))) + val
+
+        exponent = val_new[:3]
+        mantissa = val_new[3:]
+        bias = 3
+        mantissa_val = 1
+        for i in range(len(mantissa)):
+            mantissa_val += (int(mantissa[i]) * (2 ** -(i + 1)))
+        exponent_val = int(exponent, 2) - bias
+        answer = mantissa_val * (2 ** exponent_val)
+        return answer
+
+    def _convert_ftb(imm_val: str) -> str:
+        if "." not in imm_val:
+            binary_number = bin(int(imm_val))[2:]
+            new_str = ""
+            for i in range(0, (7 - len(binary_number))):
+                new_str += "0"
+
+            return new_str + binary_number
+
+        else:
+            new_imm_val = imm_val.split(".")
+            int_decimal = int(new_imm_val[0])
+
+            new_list = []
+            while int_decimal > 0:
+                binary_decimal = int_decimal % 2
+                new_list.append(binary_decimal)
+                int_decimal = int(int_decimal / 2)
+
+            new_list.reverse()
+            size = len(new_list)
+            new_decimal = ""
+            for i in new_list:
+                i = str(i)
+                new_decimal += i
+
+            count = 0
+            for i in new_imm_val[1]:
+                count += 1
+
+            decimal_2 = float(int(new_imm_val[1]) / (10 ** count))
+            after_size = (8 - size)
+            new_count = 0
+            new_list_2 = []
+            while (decimal_2 * 10) % 10 != 0 and new_count < after_size:
+                decimal_2 *= 2
+                decimal_2_str = bin(int(str(decimal_2)[0]))[2:3]
+                new_list_2.append(decimal_2_str)
+                decimal_2 -= int(decimal_2)
+                new_count += 1
+
+            if len(new_list_2) < after_size:
+                for _ in range(0, (after_size - len(new_list_2))):
+                    new_list_2.append("0")
+
+            if len(new_list_2) > after_size:
+                for i in range((len(new_list_2)), (len(new_list_2) - after_size), -1):
+                    new_list_2.pop()
+
+            new_str = ""
+            for i in new_list_2:
+                new_str += str(i)
+
+            actual_str = (new_decimal + "." + new_str)
+
+            b = actual_str.split(".")
+            mantissa = ""
+
+            if b[0] == 1:
+                for i in range(0, 6):
+                    mantissa += actual_str[i]
+
+            else:
+                new_list_3 = []
+                for i in range(1, 7):
+                    new_list_3.append(actual_str[i])
+
+                if "." not in new_list_3:
+                    new_list_3.pop()
+
+                if "." in new_list_3:
+                    new_list_3.remove(".")
+
+                for i in new_list_3:
+                    mantissa += i
+
+            exponent = (size - 1)
+            biased_exponent = (3 + exponent)
+            c = bin(biased_exponent)[2:]
+            floating_point = (c + "_" + mantissa)
+
+            if len(c) < 3:
+                list_zero = []
+                for i in range(0, (3 - len(c))):
+                    list_zero.append("0")
+                f = ""
+                for i in list_zero:
+                    f += i
+                floating_point_new = f + floating_point
+                return floating_point_new
+
+            elif len(c) > 3:
+                c = c[0: 3]
+                floating_point_new = (c + "_" + mantissa)
+                return floating_point_new
+
+            else:
+                return floating_point
+
+
+    def convert_ftb(imm_val: str) -> str:
+        result = FLOAT_BINARY._convert_ftb(imm_val)
+        result = result.replace("_", "")
+        return result
+
+    def addf(bin_1, bin_2):
+        added_val = get_val(bin_1) + get_val(bin_2)
+        if added_val > 496:
+            return "overflow"
+
+        added_val_in_bin = FLOAT_BINARY.convert_ftb(str(added_val))
+        return added_val_in_bin
+
+    def subf(bin_1, bin_2):
+        sub_val = get_val(bin_1) - get_val(bin_2)
+        if sub_val < 0:
+            return "overflow"
+
+        sub_val_in_bin = FLOAT_BINARY.convert_ftb(str(float(sub_val)))
+        return sub_val_in_bin
 
 
 class REGISTERS:
@@ -378,6 +532,24 @@ def and_a(reg1_add: str, reg2_add: str, reg3_add: str):
     REGISTERS_DICT[reg1_add].val = BINARY.andb(reg2_val, reg3_val)
 
 
+def add_f(reg1_add: str, reg2_add: str, reg3_add: str):
+    result = FLOAT_BINARY.addf(REGISTERS_DICT[reg2_add].val, REGISTERS_DICT[reg3_add].val)
+    if result == "overflow":
+        REGISTERS_DICT[reg1_add].val = BINARY("0")
+        FLAG.overflow = True
+    else:
+        REGISTERS_DICT[reg1_add].val = FLOAT_BINARY(result)
+
+
+def sub_f(reg1_add: str, reg2_add: str, reg3_add: str):
+    result = FLOAT_BINARY.subf(REGISTERS_DICT[reg2_add].val, REGISTERS_DICT[reg3_add].val)
+    if result == "overflow":
+        REGISTERS_DICT[reg1_add].val = BINARY("0")
+        FLAG.overflow = True
+    else:
+        REGISTERS_DICT[reg1_add].val = FLOAT_BINARY(result)
+
+
 type_a = {
     "00000": add_a,
     "00001": sub_a,
@@ -385,6 +557,8 @@ type_a = {
     "01010": xor_a,
     "01011": or_a,
     "01100": and_a,
+    "10000": add_f,
+    "10001": sub_f,
 }
 
 
@@ -424,16 +598,27 @@ def ls_b(reg1_add: str, imm_val: str):
     REGISTERS_DICT[reg1_add].val = BINARY(new_val)
 
 
+def mov_f(reg1_add: str, imm_val: str):
+    REGISTERS_DICT[reg1_add].val = FLOAT_BINARY(imm_val)
+
+
 type_b = {
     "00010": mov_i_b,
     "01000": rs_b,
     "01001": ls_b,
+    "10010": mov_f
 }
 
 
 def execute_type_b(instruction: str):
     # | opcode x 5 | unused x 1 | reg1 x 3 | imm_val x 7 |
     opcode = instruction[:5]
+    if opcode == "10010":
+        r1_address = instruction[5:8]
+        imm_val = instruction[8:16]
+        type_b[opcode](r1_address, imm_val)
+        return
+
     r1_address = instruction[6:9]
     imm_val = instruction[9:16]
     type_b[opcode](r1_address, imm_val)
@@ -449,16 +634,17 @@ def mov_c(reg1_add: str, reg2_add: str):
 def div_c(reg1_add: str, reg2_add: str):
     if REGISTERS_DICT[reg2_add].val.get_int_val() == 0:
         REGISTERS_DICT["111"].overflow = True
-        REGISTERS_DICT["00000"].val = BINARY("0", 16)
-        REGISTERS_DICT["00001"].val = BINARY("0", 16)
+        REGISTERS_DICT["000"].val = BINARY("0", 16)
+        REGISTERS_DICT["001"].val = BINARY("0", 16)
         return
 
     result = BINARY.div_two_binary(
         REGISTERS_DICT[reg1_add].val, REGISTERS_DICT[reg2_add].val
     )
-    REGISTERS_DICT["00000"].val = result["quotient"]
-    REGISTERS_DICT["00000"].val.limit_bits(16)
-    REGISTERS_DICT["00001"].val = result["remainder"]
+    REGISTERS_DICT["000"].val = result["quotient"]
+    REGISTERS_DICT["000"].val.limit_bits(16)
+    REGISTERS_DICT["001"].val = result["remainder"]
+    REGISTERS_DICT["001"].val.limit_bits(16)
 
 
 def not_c(reg1_add: str, reg2_add: str):
@@ -596,6 +782,20 @@ def append_output():
     cur_out = cur_out + f"\n"
     OUTPUT.append(cur_out)
 
+def append_output_float():
+    bin_pc = BINARY(bin(PC.val)[2:], 7)
+    bgap = "       "
+    cur_out = f"{bin_pc.val}{bgap}"
+    for i in range(7):
+        reg_key = "R" + str(i)
+        cur_val = CURRENT_STATUS[reg_key]
+        fillers = "0" * (16 - len(cur_val))
+        cur_out = cur_out + f" {fillers}{cur_val}"
+
+    cur_out = cur_out + f" {CURRENT_STATUS['FLAG_CONTENT']}"
+    cur_out = cur_out + f"\n"
+    OUTPUT.append(cur_out)
+
 
 def read_from_file():
     global FILE
@@ -660,7 +860,8 @@ def file_based():
         REGISTERS_DICT["111"].update_val()
         update_current_status()
         pprint(CURRENT_STATUS)
-        append_output()
+        # append_output()
+        append_output_float()
         PC.go_to_next()
         print("^-------------------------^")
 
@@ -682,7 +883,8 @@ def sys_based():
         if result == 0:
             REGISTERS_DICT["111"].reset_val()
         update_current_status()
-        append_output()
+        # append_output()
+        append_output_float()
         PC.go_to_next()
 
     dump_code()
@@ -690,8 +892,8 @@ def sys_based():
 
 
 def main():
-    file_based()
-    # sys_based()
+    # file_based()
+    sys_based()
 
 
 if __name__ == "__main__":

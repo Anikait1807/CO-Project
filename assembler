@@ -88,6 +88,18 @@ INSTRUCTIONS = {
         "type": "F",
         "opcode": "11010",
     },
+    "addf": {
+        "type": "A",
+        "opcode": "10000",
+    },
+    "subf": {
+        "type": "A",
+        "opcode": "10001",
+    },
+    "movf": {
+        "type": "B",
+        "opcode": "10010",
+    },
 }
 
 REGISTERS = {
@@ -260,6 +272,131 @@ def floating_to_binary(imm_val):
     else:
         return floating_point
 
+# ADDED THESE -----------------------------V
+
+def convert_btf(val: str) -> float:
+    val_new = val
+    if len(val) < 8:
+        val_new = ("0" * (8 - len(val))) + val
+
+    exponent = val_new[:3]
+    mantissa = val_new[3:]
+    bias = 3
+    mantissa_val = 1
+    for i in range(len(mantissa)):
+        mantissa_val += (int(mantissa[i]) * (2 ** -(i + 1)))
+    exponent_val = int(exponent, 2) - bias
+    answer = mantissa_val * (2 ** exponent_val)
+    return answer
+
+
+def _convert_ftb(imm_val: str) -> str:
+    if "." not in imm_val:
+        binary_number = bin(int(imm_val))[2:]
+        new_str = ""
+        for i in range(0, (7 - len(binary_number))):
+            new_str += "0"
+
+        return new_str + binary_number
+
+    else:
+        new_imm_val = imm_val.split(".")
+        int_decimal = int(new_imm_val[0])
+
+        new_list = []
+        while int_decimal > 0:
+            binary_decimal = int_decimal % 2
+            new_list.append(binary_decimal)
+            int_decimal = int(int_decimal / 2)
+
+        new_list.reverse()
+        size = len(new_list)
+        new_decimal = ""
+        for i in new_list:
+            i = str(i)
+            new_decimal += i
+
+        count = 0
+        for i in new_imm_val[1]:
+            count += 1
+
+        decimal_2 = float(int(new_imm_val[1]) / (10 ** count))
+        after_size = (8 - size)
+        new_count = 0
+        new_list_2 = []
+        while (decimal_2 * 10) % 10 != 0 and new_count < after_size:
+            decimal_2 *= 2
+            decimal_2_str = bin(int(str(decimal_2)[0]))[2:3]
+            new_list_2.append(decimal_2_str)
+            decimal_2 -= int(decimal_2)
+            new_count += 1
+
+        if len(new_list_2) < after_size:
+            for _ in range(0, (after_size - len(new_list_2))):
+                new_list_2.append("0")
+
+        if len(new_list_2) > after_size:
+            for i in range((len(new_list_2)), (len(new_list_2) - after_size), -1):
+                new_list_2.pop()
+
+        new_str = ""
+        for i in new_list_2:
+            new_str += str(i)
+
+        actual_str = (new_decimal + "." + new_str)
+
+        b = actual_str.split(".")
+        mantissa = ""
+
+        if b[0] == 1:
+            for i in range(0, 6):
+                mantissa += actual_str[i]
+
+        else:
+            new_list_3 = []
+            for i in range(1, 7):
+                new_list_3.append(actual_str[i])
+
+            if "." not in new_list_3:
+                new_list_3.pop()
+
+            if "." in new_list_3:
+                new_list_3.remove(".")
+
+            for i in new_list_3:
+                mantissa += i
+
+        exponent = (size - 1)
+        biased_exponent = (3 + exponent)
+        c = bin(biased_exponent)[2:]
+        floating_point = (c + "_" + mantissa)
+
+        if len(c) < 3:
+            list_zero = []
+            for i in range(0, (3 - len(c))):
+                list_zero.append("0")
+            f = ""
+            for i in list_zero:
+                f += i
+            floating_point_new = f + floating_point
+            return floating_point_new
+
+        elif len(c) > 3:
+            c = c[0: 3]
+            floating_point_new = (c + "_" + mantissa)
+            return floating_point_new
+
+        else:
+            return floating_point
+
+
+def convert_ftb(imm_val: str) -> str:
+    result = _convert_ftb(imm_val)
+    result = result.replace("_", "")
+    return result
+
+
+# -----------------------------------------^
 
 # Type A: 3 Register Type
 # def type_a(opcode: str, reg1: str, reg2: str, reg3: str) -> str:
@@ -308,13 +445,29 @@ def type_b(opcode, line_split: list[str]) -> str:
 
     reg1_address = REGISTERS[line_split[1]]["address"]
     imm_val = line_split[2][1:]
-    if not is_imm_val_valid(imm_val):
-        raise_error_imm_value(imm_val)
-        error = True
-        return
-    imm_val = int_to_bin_imm(imm_val)
+    if line_split[0] == "movf":
+        for i in imm_val:
+            if i not in {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."}:
+                raise_error_imm_value(imm_val)
+                error = True
+                return
 
-    return f"{opcode}0{reg1_address}{imm_val}"
+        if float(imm_val) > 496 or float(imm_val) < 0:
+            raise_error_imm_value(imm_val)
+            error = True
+            return
+        else:
+            bin_imm_val = convert_ftb(imm_val)
+            return f"{opcode}{reg1_address}{bin_imm_val}"
+
+    else:
+        if not is_imm_val_valid(imm_val):
+            raise_error_imm_value(imm_val)
+            error = True
+            return
+        imm_val = int_to_bin_imm(imm_val)
+
+        return f"{opcode}0{reg1_address}{imm_val}"
 
 
 # Type C : 2 registers type
